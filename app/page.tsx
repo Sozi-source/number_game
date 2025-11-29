@@ -4,30 +4,16 @@ import { useState } from "react";
 import speak from "@/utils/speak";
 
 const Game: React.FC=()=>{
-  const [secretNumber] = useState(Math.floor(Math.random() * 101))
+  const [secretNumber, setSecretNumber] = useState(Math.floor(Math.random() * 101))
   const [guess, setGuess] = useState("")
   const [attempts, setAttempts] = useState(0)
   const [message, setMessage] = useState("")
+  const [guesslog, setGuesslog] = useState<number[]>([]);
+  const [error, setError] = useState<string | null>(null);
 
-
-// Custom exceptions
-class ValueTooHighError extends Error {
-    constructor(message = "The value entered is too high!") {
-        super(message);
-        this.name = "ValueTooHighError";
-    }
-}
-
-class ValueTooLowError extends Error {
-    constructor(message = "The value entered is too low!") {
-        super(message);
-        this.name = "ValueTooLowError";
-    }
-}
 
 const handleNumberClick = (num: string) => setGuess((prev) => prev + num);
-  const handleClear = () => setGuess("");
-
+ 
   const handleSubmit = () => {
     const num = parseInt(guess);
     if (isNaN(num)) {
@@ -37,24 +23,31 @@ const handleNumberClick = (num: string) => setGuess((prev) => prev + num);
       return;
     }
 
+    setGuesslog((prev) => [...prev, num]);
+    setError(null);
+
     try {
         if (num < secretNumber) {
            speak("The value entered is too low, try again!");
-            throw new ValueTooLowError();
+            throw new Error("The value entered is too low, try again!");
            
           
         }
         else if (num > secretNumber) {
             speak("The value entered is too high, try again!");
-            throw new ValueTooHighError();
+             throw new Error("The value entered is too high, try again!");
                   
         }
         else {
             setMessage(`You got it right! The number was ${num}. Total attempts: ${attempts + 1}`);
-            speak(`You got it right! The number was ${num}. Total attempts: ${attempts + 1}`);
+            speak(`Congratulations! You got it right! The number was ${num}`);
             }
+            setGuess("")
+            setGuesslog([])
+
+
     } catch (error) {
-        if (error instanceof ValueTooHighError || error instanceof ValueTooLowError) {
+        if (error instanceof Error) {
             setMessage(`${error.message}`);
         } else {
             setMessage(`Unexpected error: ${error}`);
@@ -65,6 +58,18 @@ const handleNumberClick = (num: string) => setGuess((prev) => prev + num);
     }
 }
 
+ // New Game handler
+  const startNewGame = () => {
+    const newSecret = Math.floor(Math.random() * 101);
+    setSecretNumber(newSecret);
+    setGuesslog([]);
+    setGuess("");
+    setAttempts(0);
+    setMessage("");
+    speak("New game started! Try to guess the new number.");
+  };
+
+
 const numbers = Array.from({ length: 10 }, (_, i) => i.toString());
 
 return(
@@ -72,11 +77,22 @@ return(
     <div className="max-w-md flex flex-col items-center justify-center border-8 border-purple-400 rounded-3xl bg-white p-6 shadow-lg mb-6 w-full">
       <h1 className="text-3xl sm:text-4xl font-extrabold text-purple-700 mb-6 text-center">🎯 Guess Game</h1>
 
-    <p className="max-w-md w-full text-center text-gray-700 mb-4 px-3 py-2 rounded-lg bg-yellow-50 shadow-sm">🎯 Guess the <span className="text-red-600 font-semibold">secret number</span> between 0 and 100. Click the numbers below to enter your guess, then press "Submit Guess". Try to get it right in as few attempts as possible</p>
-    <div className="mb-4 w-full max-w-xs">
-      <p className="w-full text-lg sm:text-xl font-semibold mb-2 text-center text-green-600"
-      > Current guess: <span className="font-mono text-gray-800">{guess || "-"}</span>
-      </p>
+    <p className="max-w-md w-full text-center text-gray-700 mb-4 px-3 py-2 rounded-lg bg-yellow-50 shadow-sm">🎯 Guess the <span className="text-red-600 font-semibold">secret number</span> between 0 and 100. Try to get it right in as few attempts as possible, good luck!</p>
+    <div className="mb-4 w-full max-w-xs">      
+      <div className="flex flex-col items-center mb-2 gap-2">
+        {/* New game */}
+        <button 
+        onClick={startNewGame}
+        className="mt-2 bg-yellow-400 text-white font-bold py-2 px-4 rounded-lg shadow-lg hover:bg-yellow-500 transition transform hover:scale-105"
+        >New Game
+    </button>
+
+        <p className="w-full text-sm sm:text-lg mb-2 text-center text-blue-800 font-sans mt-5">
+            Current Guess: <span className="font-mono text-purple-700 border border-gray-200 px-4 py-2">{guess || "-"}</span>
+        </p>
+
+      
+      </div>
 
       <p className="w-full text-center font-bold mb-2 px-2 py-2 rounded-lg bg-purple-100 text-purple-700 shadow-lg">Attempts: {attempts}</p>
     </div>
@@ -97,18 +113,25 @@ return(
       className="col-span-3 bg-green-400 text-white font-bold py-4 sm:py-5 rounded-lg shadow-lg hover:bg-green-500 transition transform hover:scale-105 text-lg sm:text-xl"
       >Submit Guess
       </button>
-      </div>
-      
+      </div>      
     </div>
-    <p className={`w-full text-base sm:text-lg font-semibold mb-0 text-center px-3 py-2 rounded-lg shadow ${
-    message.includes("right")
-      ? "bg-green-100 text-green-700"
-      : message.includes("🔴")
-      ? "bg-red-100 text-red-600"
-      : message.includes("🔵")
-      ? "bg-blue-100 text-blue-600"
-      : "bg-yellow-50 text-gray-700"
-  }`}> {message}</p>
+
+{/* Log guessed numbers */}
+     <p className="text-lg sm:text-sm font-semibold mb-2 text-center text-gray-700">Guessed Numbers</p>
+    <div className="flex items-center justify-center gap-2 mb-4 grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6">
+       {guesslog.length === 0 ? (
+      <span className="text-gray-400 italic col-span-full text-center">No guesses yet</span>
+      ) : (
+      guesslog.map((g, idx) => (
+      <span
+        key={idx}
+        className="px-3 py-2 bg-purple-200 text-purple-800 rounded-lg shadow font-mono text-center"
+      >
+        {g}
+      </span>
+    ))
+  )}
+    </div>
     </div>
   </div>
 )
