@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react";
+import speak from "@/utils/speak";
 
 const Game: React.FC=()=>{
   const [secretNumber] = useState(Math.floor(Math.random() * 101))
@@ -31,26 +32,26 @@ const handleNumberClick = (num: string) => setGuess((prev) => prev + num);
     const num = parseInt(guess);
     if (isNaN(num)) {
       setMessage("Please enter a valid number.");
+      speak("Please enter a valid number.");
       setGuess("");
       return;
     }
 
     try {
-        if (isNaN(num)) {
-            setMessage("Please enter a valid number.");
-            return;
-        }
-
         if (num < secretNumber) {
+           speak("The value entered is too low, try again!");
             throw new ValueTooLowError();
+           
           
         }
         else if (num > secretNumber) {
+            speak("The value entered is too high, try again!");
             throw new ValueTooHighError();
-            
+                  
         }
         else {
             setMessage(`You got it right! The number was ${num}. Total attempts: ${attempts + 1}`);
+            speak(`You got it right! The number was ${num}. Total attempts: ${attempts + 1}`);
             }
     } catch (error) {
         if (error instanceof ValueTooHighError || error instanceof ValueTooLowError) {
@@ -67,11 +68,12 @@ const handleNumberClick = (num: string) => setGuess((prev) => prev + num);
 const numbers = Array.from({ length: 10 }, (_, i) => i.toString());
 
 return(
-  <div className="min-h-screen flex flex-col items-center justify-center bg-yellow-100 p-4 border-8 border-purple-400 rounded-3xl shadow-2xl">
-    <h1 className="text-3xl sm:text-4xl font-extrabold text-purple-700 mb-6 text-center">🎯 Guess Game</h1>
+  <div className="min-h-screen flex flex-col items-center justify-center bg-yellow-100 p-4 rounded-3xl shadow-2xl">
+    <div className="max-w-md flex flex-col items-center justify-center border-8 border-purple-400 rounded-3xl bg-white p-6 shadow-lg mb-6 w-full">
+      <h1 className="text-3xl sm:text-4xl font-extrabold text-purple-700 mb-6 text-center">🎯 Guess Game</h1>
 
-    <p className="w-full text-center text-gray-700 mb-4 px-3 py-2 rounded-lg bg-yellow-50 shadow-sm">🎯 Guess the <span className="text-red-600 font-semibold">secret number</span> between 0 and 100. Click the numbers below to enter your guess, then press "Submit Guess". Try to get it right in as few attempts as possible</p>
-    <div className="max-w-md flex flex-col items-center justify-center">
+    <p className="max-w-md w-full text-center text-gray-700 mb-4 px-3 py-2 rounded-lg bg-yellow-50 shadow-sm">🎯 Guess the <span className="text-red-600 font-semibold">secret number</span> between 0 and 100. Click the numbers below to enter your guess, then press "Submit Guess". Try to get it right in as few attempts as possible</p>
+    <div className="mb-4 w-full max-w-xs">
       <p className="w-full text-lg sm:text-xl font-semibold mb-2 text-center text-green-600"
       > Current guess: <span className="font-mono text-gray-800">{guess || "-"}</span>
       </p>
@@ -107,6 +109,7 @@ return(
       ? "bg-blue-100 text-blue-600"
       : "bg-yellow-50 text-gray-700"
   }`}> {message}</p>
+    </div>
   </div>
 )
 }
